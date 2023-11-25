@@ -1,0 +1,142 @@
+---
+title: "ControleDeQualidadeTrabalho"
+author: "WILLIAM IRINEU"
+date: "2023-11-14"
+output:
+  html_document: default
+  word_document: default
+---
+
+## Pacotes Utilizados
+```{r}
+
+#install.packages("read_excel")
+#install.packages("tidyverse")
+
+```
+
+## Importação e Resumo dos dados
+```{r}
+#Limpando memoria
+rm(list=ls())
+
+#Importando os dados
+library(readxl)
+Dados=read_xlsx("HistogramaTrabalhoControleQualidade.xlsx")
+
+head(Dados)
+attach(Dados)
+
+#Medidas de Resumo
+summary(Dados)
+media=mean(Densidade);media
+var(Densidade)==sd(Densidade)^2
+```
+
+# Histograma Basico do R e Intervalos
+```{r}
+hist(Densidade)
+
+#Amplitude amostral
+AmpliAmostral=max(Dados)-min(Dados);AmpliAmostral
+AmpliAmostral
+#Considerando Intervalo de 6 classes
+AmpliAmostral/8
+
+#Intervalo de 1,6, sendo 6 classes
+min(Dados)+1.4
+max(Dados)+1.4
+
+seq(min(Dados),max(Dados),1.2)
+#Histograma Basico do R com 6 intervalos
+hist(Densidade,breaks = 6,col="deepskyblue")
+```
+
+
+
+## Utilizando o GGPLOT2 para criar o histograma
+```{r}
+#Chamando as bibliotecas
+library(ggplot2)
+library(tidyverse)
+
+ggplot(Dados, aes(x = Densidade)) +
+  geom_histogram(bins = 6, fill = "deepskyblue", col = "black")+
+  ggtitle("Histograma tamanho amostral da serras") +
+  xlab("Tamanho das serras (mm)") +
+  ylab("Número de serras") +
+  theme_classic()
+
+```
+
+## Melhorando Grafico do Histograma 
+
+```{r}
+#Criando 6 classes de intervalos
+faixas <-
+  Dados$Densidade %>% 
+cut( breaks =  c(35, 37, 38.6, 40.2, 41.8, 43.4, 44,46.6), labels = c("35-37","37-38.6","38.6-40.2","40.2-41.8","41.8-43.4","43.4-44","44.4-45,6"))
+# Agrupando em faixas e colocando no data frame
+Dados <- data.frame(Dados,Faixa=faixas)
+head(Dados)
+
+```
+
+```{r,warning=FALSE}
+
+# Definir tamanho global do gráfico
+options(
+  repr.plot.width =9,    # Largura em polegadas
+  repr.plot.height = 8   # Altura em polegadas
+)
+
+
+# Calcular as frequências de cada sexo
+  frequencia_f <- table(Dados$Faixa)
+
+# Calcular as porcentagens de cada sexo
+porcentagens <- round(frequencia_f/ sum(frequencia_f) * 100, 1)
+
+# Criar um dataframe para o gráfico
+faixas = names(frequencia_f)
+Frequencia = frequencia_f
+Porcentagem = porcentagens
+grafico_data <- data.frame(Classes = names(frequencia_f), Frequencia = frequencia_f, Porcentagem = porcentagens)
+
+# Criar o gráfico de barras usando ggplot2
+grafico_barras <- ggplot(data = grafico_data, aes(x = Classes, y = frequencia_f)) +
+  geom_bar(stat = "identity", fill = "dodgerblue1") +
+  geom_text(aes(label = paste(frequencia_f, "-", porcentagens, "%", sep = "")), vjust = -0.5, color = "black") +
+  labs(title = "Histograma tamanho amostral da serras", x = "Tamanho das serras (mm)", y = "QuantidadeS + %") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 1))+
+  geom_vline(xintercept = as.numeric(as.factor(37)) + 0.5, linetype = "dashed", color = "red", size = 1) +
+  geom_text(x = as.numeric(as.factor(37)) + 0.5, y = max(grafico_data$frequencia_f) + 5, label = "LIE = 37", vjust = -18, color = "black", size = 6)+
+  geom_vline(xintercept = as.numeric(as.factor(44)) + 5.5, linetype = "dashed", color = "red", size = 1) +
+  geom_text(x = as.numeric(as.factor(44)) + 5.5, y = max(grafico_data$frequencia_f) + 5, label = "LSE = 44", vjust = -18, color = "black", size = 6)+
+  geom_text(x = as.numeric(as.factor(37)) + 0.5, y = max(grafico_data$frequencia_f) + 5, label = "LIE = 37", vjust = -18, color = "black", size = 6)+
+  geom_vline(xintercept = as.numeric(as.factor(media)) + 3, linetype = "dashed", color = "green4", size = 1) +
+  geom_text(x = as.numeric(as.factor(media)) + 3, y = max(grafico_data$frequencia_f) + 5, label = "Media", vjust = -18, color = "black", size = 6)
+
+# Exibir o gráfico de barras
+print(grafico_barras)
+
+k=0
+i=1
+for (i in 1:80) {
+if(Densidade[i]>37&&
+Densidade[i]<44.5){k=k+1}
+  
+}
+k
+
+```
+
+
+```{r}
+# Salvar o gráfico com dimensões personalizadas (width e height em polegadas)
+ggsave("grafico_barrasIdadeFaixa.png", plot = grafico_barras, width = 9, height = 8)
+```
+
+
+
